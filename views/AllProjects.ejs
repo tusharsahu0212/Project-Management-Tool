@@ -25,7 +25,7 @@
 
                 <div class="text-end">
                     <a href="/createProject"><button type="button" class="btn btn-outline-light me-2">Create Project Group</button></a>
-                    <a href="/logout"><button type="button" class="btn btn-outline-light me-2">Logout</button></a>
+                    <a href="/login"><button type="button" class="btn btn-outline-light me-2">Login</button></a>
                     <a href="/signUp"><button type="button" class="btn btn-warning">Sign-up</button></a>
                 </div>
             </div>
@@ -35,14 +35,26 @@
 
     <div class="container mt-3">
         <div class="list-group">
-            <% myProjects.forEach((project)=>{ %>
+            <% allProjects.forEach((project)=>{ %>
 
-                <% projectRoomUrl = `/projectRoom?projectId=${project._id}` %>
-                <a href=<%= projectRoomUrl %> class="list-group-item list-group-item-action">
+                <a href="#" class="list-group-item list-group-item-action border">
                     <div class="d-flex w-100 justify-content-between">
                       <h5 class="mb-1"><%= project.projectName %></h5>
                     </div>
                     <p class="mb-1"><%= project.projectDescription %></p>
+
+                    <% if(project.projectMembers.includes(user)){ %>
+
+                        <small class="text-success">You joined</small>
+                        
+                        <% }else{ %>
+                            
+                            <small class="text-danger">you not joined</small>
+                            <% urlToJoin = `/joinTheProject?projectId=${project._id}` %>
+                            <a href="<%= urlToJoin %>"><small type="button" class="btn btn-info fw-bold text-light">Join</small></a>
+
+                  <%  } %>
+
                   </a>
 
           <%  }) %>

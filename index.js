@@ -19,22 +19,6 @@ async function main() {
 let userIdSession = null;
 let userPasswordSession = null;
 
-
-const projectSchema = new mongoose.Schema({
-
-    projectName: String,
-    projectDescription: String,
-    projectMembers: {
-        type: [String],  // userId's
-        default: []
-    },
-    projectTasks: {
-        type: [{type: mongoose.Schema.Types.ObjectId, ref: 'Task'}],
-        default: []
-    }
-
-});
-
 const taskSchema = new mongoose.Schema({
 
     taskTitle: String,
@@ -45,26 +29,41 @@ const taskSchema = new mongoose.Schema({
     project: String
 });
 
+const projectSchema = new mongoose.Schema({
+
+    projectName: String,
+    projectDescription: String,
+    projectMembers: {
+        type: [String],  // userId's
+        default: []
+    },
+    projectTasks: {
+        type: [taskSchema],
+        default: []
+    }
+
+});
+
+
 const userSchema = new mongoose.Schema({
 
     userId: String,
     userPassword: String,
     Name: String,
     tasksAssigned: {
-        type: [{type: mongoose.Schema.Types.ObjectId, ref: 'Task'}],
+        type: [taskSchema],
         default: []
     },
     tasksPosted: {
-        type: [{type: mongoose.Schema.Types.ObjectId, ref: 'Task'}],
+        type: [taskSchema],
         default: []
     },
     joinedProjects: {
-        type: [{type: mongoose.Schema.Types.ObjectId, ref: 'Project'}],
+        type: [projectSchema],
         default: []
     }
 
 });
-
 
 const Project = new mongoose.model('Project', projectSchema);
 const Task = new mongoose.model('Task', taskSchema);
@@ -89,20 +88,28 @@ app.get('/signUp', (req,res)=>{
 
 app.post('/signUp', (req,res)=>{
 
-    const newUser = new User({
+    User.findOne({userId: req.body.userId}).then((data,err)=>{
 
-        userId: req.body.userId,
-        userPassword: req.body.userPassword,
-        Name: req.body.userName
+        if(data){
+           return res.render('login')
+        }else{
+            const newUser = new User({
 
+                userId: req.body.userId,
+                userPassword: req.body.userPassword,
+                Name: req.body.userName
+        
+            });
+        
+            newUser.save();
+        
+            userIdSession = req.body.userId;
+            userPasswordSession = req.body.userPassword;    
+        
+            res.render('JoinedProjects',{myProjects: []})
+        }
     });
-
-    newUser.save();
-
-    userIdSession = req.body.userId;
-    userPasswordSession = req.body.userPassword;    
-
-    res.render('JoinedProjects',{data:newUser})
+    
 });
 
 
@@ -117,7 +124,7 @@ app.post('/login', (req,res)=>{
             userIdSession = req.body.userId;
             userPasswordSession = req.body.userPassword;  
 
-            res.render('JoinedProjects',{myProjects: data.Project})
+            res.render('JoinedProjects',{myProjects: data.joinedProjects})
         }else{
             res.redirect('/signup');
         }
@@ -142,10 +149,17 @@ app.get('/logout', (req,res)=>{
 
 app.get('/allProjects', (req,res)=>{
 
+
     Project.find().then((data,err)=>{
 
         if(!err){
-            res.render('AllProjects',{allProjects: data});
+            if(userIdSession){
+
+                res.render('AllProjects',{allProjects: data,user: userIdSession});
+            }else{
+                res.render('AllProjects',{allProjects: data,user: null});
+
+            }
         }
         console.log(err);
     });
@@ -157,29 +171,158 @@ app.get('/joinedProjects', (req,res)=>{
         User.findOne({userId: userIdSession}).then((data,err)=>{
 
             if(!err){
-                res.render('JoinedProjects',{myProjects: data.joinedProjects})
+              return res.render('JoinedProjects',{myProjects: data.joinedProjects})
             }
     
             console.log(err);
         });
+    }else{
+
+        return res.redirect('/login');
     }
-
-
-
-    res.redirect('/login');
 
 });
 
+app.get('/joinTheProject', (req,res)=>{
+
+    if(userIdSession && userPasswordSession){
+        User.findOne({userId: userIdSession}).then((user,err)=>{
+
+            if(!err){
+
+                Project.findOne({_id:req.query.projectId}).then((project,err)=>{
+                    let previousMembers = project.projectMembers;
+                    previousMembers.push(userIdSession);
+
+                    Project.updateOne({_id:req.query.projectId},{projectMembers:previousMembers}).then((project,err)=>{
+                        if(err){
+                            console.log(err);
+                        }
+                    });
+
+                    let previousProjects = user.joinedProjects;
+                    // console.log("pre",previousProjects);
+                    previousProjects.push(project);
+        
+                    User.updateOne({ userId: userIdSession}, { joinedProjects: previousProjects }).then((data, err) => {
+        
+                        if (err) {
+                            console.log("err",err);
+                        }else{
+                            // console.log("data",user);
+                        }
+                
+                    });
+                });
+
+                res.redirect('joinedProjects');
+            }
+    
+            console.log(err);
+        });
+    }else{
+
+        return res.redirect('/login');
+    }
+
+});
+
+app.get('/projectRoom', (req,res)=>{
+
+    Project.findOne({_id:req.query.projectId}).then((project,err)=>{
+
+        if(!err){
+
+            res.render('projectRoom',{projectData:project});
+
+        }else{
+            console.log(err);
+        }
+    });
+});
+
+app.get('/projectInfo', (req,res)=>{
+
+    Project.findOne({_id:req.query.projectId}).then((project,err)=>{
+
+        if(!err){
+
+            res.render('projectInfo',{projectData:project});
+
+        }else{
+            console.log(err);
+        }
+    });
+});
+
+app.get('/projectMembers', (req,res)=>{
+
+    Project.findOne({_id:req.query.projectId}).then((project,err)=>{
+
+        if(!err){
+
+            res.render('projectMembers',{projectData:project});
+
+        }else{
+            console.log(err);
+        }
+    });
+});
+
+app.get('/projectTasks', (req,res)=>{
+
+    Project.findOne({_id:req.query.projectId}).then((project,err)=>{
+
+        if(!err){
+
+            res.render('projectTasks',{projectTasks:project.projectTasks});
+
+        }else{
+            console.log(err);
+        }
+    });
+});
+
+app.get('/tasksAssignedByYou', (req,res)=>{
+
+    Project.findOne({_id:req.query.projectId}).then((project,err)=>{
+
+        if(!err){
+
+            res.render('TasksAssignedByYou',{projectTasks:project.projectTasks,user: userIdSession});
+
+        }else{
+            console.log(err);
+        }
+    });
+});
+
+app.get('/tasksAssignedToYou', (req,res)=>{
+
+    Project.findOne({_id:req.query.projectId}).then((project,err)=>{
+
+        if(!err){
+
+            res.render('TasksAssignedToYou',{projectTasks:project.projectTasks,user: userIdSession});
+
+        }else{
+            console.log(err);
+        }
+    });
+});
+
 app.get('/createProject', (req,res)=>{
+
+    if(userIdSession==null && userPasswordSession==null){
+        res.redirect('/login');
+    }
 
     res.render('CreateProject');
 });
 
 app.post('/createProject', (req,res)=>{
 
-    if(userIdSession==null && userPasswordSession==null){
-        res.redirect('/login');
-    }
+
 
     const newProject = new Project({
 
@@ -191,19 +334,39 @@ app.post('/createProject', (req,res)=>{
 
     newProject.save();
 
+    console.log(newProject);
     joinedNewProject = [newProject];
 
-    Project.updateOne({ userId: userIdSession, userPassword: userPasswordSession }, { joinedProjects: joinedNewProject }).then((data, err) => {
+
+    User.findOne({ userId: userIdSession, userPassword: userPasswordSession }).then((data,err)=>{
 
         if (err) {
-            console.log(err);
+            console.log("err",err);
         }else{
-            console.log(data);
+            // console.log("data",data);
+            let previousProjects = data.joinedProjects;
+            // console.log("pre",previousProjects);
+            previousProjects.push(newProject);
+
+            User.updateOne({ userId: userIdSession, userPassword: userPasswordSession }, { joinedProjects: previousProjects }).then((data, err) => {
+
+                if (err) {
+                    console.log("err",err);
+                }else{
+                    // console.log("data",data);
+                }
+        
+            });
+
         }
+
+
 
     });
 
-    res.redirect('/joinedNewProject');
+
+
+    res.redirect('/joinedProjects');
 
 });
 
