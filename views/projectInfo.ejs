@@ -18,19 +18,19 @@
     
     
                     <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
-                        <% projectInfo = `/projectInfo?projectId=${projectData.id}` %>
+                        <% projectInfo = `/projectInfo?projectId=${projectData._id}` %>
 
                         <li><a href=<%= projectInfo %> class="nav-link px-2 text-white fs-2 fw-bold"><%= projectData.projectName %></a></li>
                         <li><a href="/" class="nav-link px-2 text-white">Home</a></li>
     
-                        <% projectMembers = `/projectMembers?projectId=${projectData.id}` %>
-                        <% projectTasks = `/projectTasks?projectId=${projectData.id}` %>
-                        <% projectTasksAssignedByYou = `/tasksAssignedByYou?projectId=${projectData.id}` %>
-                        <% projectTasksAssignedToYou = `/tasksAssignedToYou?projectId=${projectData.id}` %>
+                        <% projectMembers = `/projectMembers?projectId=${projectData._id}` %>
+                        <% projectTasks = `/projectTasks?projectId=${projectData._id}` %>
+                        <% projectTasksAssignedByYou = `/tasksAssignedByYou?projectId=${projectData._id}` %>
+                        <% projectTasksAssignedToYou = `/tasksAssignedToYou?projectId=${projectData._id}` %>
                         <li><a href=<%= projectMembers %> class="nav-link px-3 text-white">Members</a></li>
                         <li><a href=<%= projectTasks %> class="nav-link px-3 text-white">Project Tasks</a></li>
                         <li><a href=<%= projectTasksAssignedByYou %> class="nav-link px-3 text-white">Tasks Assigned by You</a></li>
-                        <li><a href=<%= projectTasksAssignedToYou %> class="nav-link px-3 text-white">Tasks Assigned T You</a></li>
+                        <li><a href=<%= projectTasksAssignedToYou %> class="nav-link px-3 text-white">Tasks Assigned To You</a></li>
                     </ul>
     
                     <div class="text-end">
